@@ -7,8 +7,10 @@ The midi library is midiutil by Mark Conway Wirt
 https://github.com/MarkCWirt/MIDIUtil
 MIDUTIL, Copyright (c) 2009-2016, Mark Conway Wirt <emergentmusics) at (gmail . com>
 Other parts of this code were made possible thanks to contributions to StackExchange like:
+
 https://stackoverflow.com/questions/12093940/reading-files-in-a-particular-order-in-python
 https://medium.com/@manivannan_data/resize-image-using-opencv-python-d2cdbbc480f0
+
 USAGE
 Run the file with the following arguments
 midify.py  --notes 4
