@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video to Sound</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      gap: 24px;
+    }
+    h1 { font-size: 1.6rem; letter-spacing: 0.05em; }
+    .card {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 24px;
+      width: 100%;
+      max-width: 560px;
+    }
+    .card h2 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #888;
+      margin-bottom: 16px;
+    }
+
+    /* Upload */
+    #upload-label {
+      display: block;
+      border: 2px dashed #4a4a8a;
+      border-radius: 8px;
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    #upload-label:hover { border-color: #7b7bff; }
+    #video-input { display: none; }
+    #filename { margin-top: 8px; font-size: 0.85rem; color: #888; }
+
+    /* Controls */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    label.field { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: #aaa; }
+    input[type=number] {
+      background: #0f3460;
+      border: 1px solid #4a4a8a;
+      border-radius: 6px;
+      color: #eee;
+      padding: 8px;
+      font-size: 1rem;
+      width: 100%;
+    }
+    button {
+      background: #533483;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: background 0.2s;
+    }
+    button:hover:not(:disabled) { background: #7b52b3; }
+    button:disabled { opacity: 0.4; cursor: default; }
+    #analyse-btn { width: 100%; }
+
+    /* Progress */
+    progress {
+      display: block;
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      border: none;
+      background: #0f3460;
+      margin-bottom: 8px;
+    }
+    progress::-webkit-progress-bar { background: #0f3460; border-radius: 4px; }
+    progress::-webkit-progress-value { background: #7b7bff; border-radius: 4px; }
+    #progress-label { font-size: 0.85rem; color: #aaa; }
+
+    /* Swatches */
+    #frame-label { font-size: 0.85rem; color: #aaa; margin-bottom: 10px; }
+    #color-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+    .swatch {
+      width: 52px;
+      height: 52px;
+      border-radius: 6px;
+      position: relative;
+    }
+    .swatch-label {
+      font-size: 9px;
+      color: rgba(255,255,255,0.8);
+      position: absolute;
+      bottom: 3px;
+      left: 0; right: 0;
+      text-align: center;
+      text-shadow: 0 0 4px rgba(0,0,0,0.9);
+    }
+
+    /* Playback */
+    .playback-btns { display: flex; gap: 12px; margin-bottom: 10px; }
+    .playback-btns button { flex: 1; }
+    #play-btn  { background: #1a6e3c; }
+    #play-btn:hover:not(:disabled)  { background: #27a85a; }
+    #stop-btn  { background: #6e1a1a; }
+    #stop-btn:hover:not(:disabled)  { background: #a82727; }
+    #playback-info { font-size: 0.8rem; color: #888; }
+
+    #error-msg { color: #ff6b6b; font-size: 0.85rem; margin-top: 10px; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<h1>Video to Sound</h1>
+
+<!-- Upload -->
+<div class="card">
+  <h2>Video</h2>
+  <label id="upload-label" for="video-input">
+    Click to upload a video file
+    <div id="filename"></div>
+  </label>
+  <input type="file" id="video-input" accept="video/*">
+  <div id="error-msg" class="hidden"></div>
+</div>
+
+<!-- Hidden video used for frame seeking -->
+<video id="video-el" style="display:none" preload="auto"></video>
+
+<!-- Controls -->
+<div class="card hidden" id="controls-card">
+  <h2>Settings</h2>
+  <div class="controls-grid">
+    <label class="field">BPM
+      <input type="number" id="bpm" value="240" min="40" max="480">
+    </label>
+    <label class="field">Notes / Frame
+      <input type="number" id="num-notes" value="4" min="1" max="8">
+    </label>
+    <label class="field">Frame Interval (s)
+      <input type="number" id="frame-interval" value="1" min="0.1" step="0.1">
+    </label>
+  </div>
+  <button id="analyse-btn">Analyse Video</button>
+</div>
+
+<!-- Progress -->
+<div class="card hidden" id="progress-card">
+  <h2>Analysing</h2>
+  <progress id="progress-bar" value="0" max="100"></progress>
+  <span id="progress-label">0 / 0 frames</span>
+</div>
+
+<!-- Live colour palette -->
+<div class="card hidden" id="palette-card">
+  <h2>Frame Colours</h2>
+  <div id="frame-label"></div>
+  <div id="color-swatches"></div>
+</div>
+
+<!-- Playback -->
+<div class="card hidden" id="playback-card">
+  <h2>Playback</h2>
+  <div class="playback-btns">
+    <button id="play-btn">Play</button>
+    <button id="stop-btn" disabled>Stop</button>
+  </div>
+  <div id="playback-info"></div>
+</div>
+
+<script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+const state = {
+  frameData: [],   // [{colors: [{r,g,b,pct}, ...]}]
+  sequence:  [],   // [{midiNote, beats}]
+  player:    null, // {part, synth, totalSec}
+};
+
+// ─── K-Means ──────────────────────────────────────────────────────────────────
+function sqDist(a, b) {
+  return (a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2;
+}
+
+// K-Means++ initialisation
+function kMeansInit(pixels, k) {
+  const centroids = [[...pixels[Math.floor(Math.random() * pixels.length)]]];
+  while (centroids.length < k) {
+    const dists = pixels.map(p => Math.min(...centroids.map(c => sqDist(p, c))));
+    const total = dists.reduce((s, d) => s + d, 0);
+    let r = Math.random() * total;
+    let i = 0;
+    while (r > 0 && i < dists.length - 1) { r -= dists[i++]; }
+    centroids.push([...pixels[i]]);
+  }
+  return centroids;
+}
+
+function kMeans(pixels, k, maxIter = 20) {
+  k = Math.min(k, pixels.length);
+  if (k === 0) return [];
+  let centroids = kMeansInit(pixels, k);
+  const labels = new Int32Array(pixels.length);
+
+  for (let iter = 0; iter < maxIter; iter++) {
+    // Assign each pixel to nearest centroid
+    for (let i = 0; i < pixels.length; i++) {
+      let best = 0, bestD = Infinity;
+      for (let c = 0; c < k; c++) {
+        const d = sqDist(pixels[i], centroids[c]);
+        if (d < bestD) { bestD = d; best = c; }
+      }
+      labels[i] = best;
+    }
+    // Recompute centroids
+    let moved = false;
+    for (let c = 0; c < k; c++) {
+      let sr = 0, sg = 0, sb = 0, count = 0;
+      for (let i = 0; i < pixels.length; i++) {
+        if (labels[i] === c) { sr += pixels[i][0]; sg += pixels[i][1]; sb += pixels[i][2]; count++; }
+      }
+      if (count > 0) {
+        const nr = sr/count, ng = sg/count, nb = sb/count;
+        if (sqDist(centroids[c], [nr, ng, nb]) >= 1.0) moved = true;
+        centroids[c] = [nr, ng, nb];
+      }
+    }
+    if (!moved) break;
+  }
+
+  const counts = new Int32Array(k);
+  for (let i = 0; i < pixels.length; i++) counts[labels[i]]++;
+  return centroids.map((cen, c) => ({
+    r: Math.round(cen[0]),
+    g: Math.round(cen[1]),
+    b: Math.round(cen[2]),
+    pct: counts[c] / pixels.length,
+  }));
+}
+
+// ─── Frame extraction ─────────────────────────────────────────────────────────
+const offCanvas = document.createElement('canvas');
+const offCtx    = offCanvas.getContext('2d');
+
+function seekToTime(video, t) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      video.onseeked = null;
+      reject(new Error('Seek timeout at ' + t.toFixed(2) + 's'));
+    }, 6000);
+    video.onseeked = () => { clearTimeout(timer); video.onseeked = null; resolve(); };
+    video.currentTime = t;
+  });
+}
+
+function extractPixels(video) {
+  const w = Math.max(1, Math.floor(video.videoWidth  / 5));
+  const h = Math.max(1, Math.floor(video.videoHeight / 5));
+  offCanvas.width = w; offCanvas.height = h;
+  offCtx.drawImage(video, 0, 0, w, h);
+  const raw = offCtx.getImageData(0, 0, w, h).data;
+  const px = new Array(w * h);
+  for (let i = 0, j = 0; i < raw.length; i += 4, j++) {
+    px[j] = [raw[i], raw[i+1], raw[i+2]];
+  }
+  return px;
+}
+
+// ─── Note conversion (matches Python midify.py / utils.py exactly) ────────────
+// n = int((r+g+b) / 765 * 96 + 24)  →  MIDI range 24–120
+function colorToNote(r, g, b) {
+  return Math.trunc((r + g + b) / 765 * 96 + 24);
+}
+// d = int(round(8 * pct, 0))
+function pctToDuration(pct) {
+  return Math.round(8 * pct);
+}
+function midiToHz(n) {
+  return 440 * Math.pow(2, (n - 69) / 12);
+}
+
+function buildSequence(frameData) {
+  const seq = [];
+  for (const { colors } of frameData) {
+    for (const { r, g, b, pct } of colors) {
+      seq.push({ midiNote: colorToNote(r, g, b), beats: pctToDuration(pct) });
+    }
+  }
+  return seq;
+}
+
+// ─── Tone.js player ───────────────────────────────────────────────────────────
+function buildTonePlayer(sequence, bpm) {
+  const spb = 60 / bpm; // seconds per beat
+  const synth = new Tone.Synth({
+    oscillator: { type: 'triangle' },
+    envelope: { attack: 0.02, decay: 0.1, sustain: 0.5, release: 0.5 },
+  }).toDestination();
+
+  let t = 0;
+  const events = [];
+  for (const { midiNote, beats } of sequence) {
+    if (beats === 0) {
+      t += spb; // rest — mirrors Python's time = time+1 for zero-duration notes
+    } else {
+      events.push([t, { hz: midiToHz(midiNote), dur: beats * spb }]);
+      t += beats * spb;
+    }
+  }
+
+  const part = new Tone.Part((time, val) => {
+    synth.triggerAttackRelease(val.hz, val.dur, time);
+  }, events);
+  part.start(0);
+
+  return { part, synth, totalSec: t };
+}
+
+// ─── UI helpers ───────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const show = id => $(id).classList.remove('hidden');
+const hide = id => $(id).classList.add('hidden');
+
+function showError(msg) {
+  $('error-msg').textContent = msg;
+  $('error-msg').classList.remove('hidden');
+}
+
+function renderSwatches(colors) {
+  $('color-swatches').innerHTML = '';
+  for (const { r, g, b, pct } of colors) {
+    const div = document.createElement('div');
+    div.className = 'swatch';
+    div.style.background = `rgb(${r},${g},${b})`;
+    const lbl = document.createElement('div');
+    lbl.className = 'swatch-label';
+    lbl.textContent = (pct * 100).toFixed(0) + '%';
+    div.appendChild(lbl);
+    $('color-swatches').appendChild(div);
+  }
+}
+
+// ─── Analysis ─────────────────────────────────────────────────────────────────
+async function analyseAllFrames() {
+  const video    = $('video-el');
+  const k        = Math.max(1, parseInt($('num-notes').value, 10));
+  const interval = Math.max(0.1, parseFloat($('frame-interval').value));
+  const bpm      = Math.max(40, parseInt($('bpm').value, 10));
+  const dur      = video.duration;
+
+  if (!dur || isNaN(dur) || dur <= 0) {
+    showError('Could not read video duration.');
+    $('analyse-btn').disabled = false;
+    return;
+  }
+
+  // Build frame timestamps
+  const timestamps = [];
+  for (let t = 0; t < dur; t += interval) {
+    timestamps.push(Math.min(t, dur - 0.1));
+  }
+  if (timestamps.length === 0) timestamps.push(0);
+
+  state.frameData = [];
+  show('progress-card');
+  show('palette-card');
+  $('progress-bar').value = 0;
+  $('progress-label').textContent = '0 / ' + timestamps.length + ' frames';
+
+  for (let i = 0; i < timestamps.length; i++) {
+    try {
+      await seekToTime(video, timestamps[i]);
+    } catch (e) {
+      console.warn(e.message);
+      continue;
+    }
+    const pixels = extractPixels(video);
+    const colors = kMeans(pixels, k);
+    state.frameData.push({ colors });
+
+    $('frame-label').textContent =
+      'Frame ' + (i + 1) + ' of ' + timestamps.length +
+      '  (t = ' + timestamps[i].toFixed(1) + 's)';
+    renderSwatches(colors);
+    $('progress-bar').value = ((i + 1) / timestamps.length * 100);
+    $('progress-label').textContent = (i + 1) + ' / ' + timestamps.length + ' frames';
+
+    await new Promise(r => setTimeout(r, 0)); // yield to keep UI responsive
+  }
+
+  if (state.frameData.length === 0) {
+    showError('No frames could be extracted from this video.');
+    $('analyse-btn').disabled = false;
+    return;
+  }
+
+  state.sequence = buildSequence(state.frameData);
+
+  // Dispose any previous player
+  if (state.player) {
+    state.player.part.dispose();
+    state.player.synth.dispose();
+    state.player = null;
+  }
+  state.player = buildTonePlayer(state.sequence, bpm);
+
+  const noteCount = state.sequence.filter(n => n.beats > 0).length;
+  $('playback-info').textContent =
+    noteCount + ' audible notes across ' + state.frameData.length + ' frames' +
+    ' · ' + Math.round(state.player.totalSec) + 's of music';
+
+  show('playback-card');
+  $('analyse-btn').disabled = false;
+}
+
+// ─── Event listeners ──────────────────────────────────────────────────────────
+$('video-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  $('error-msg').classList.add('hidden');
+  $('filename').textContent = file.name;
+
+  const video = $('video-el');
+  video.src = URL.createObjectURL(file);
+  video.load();
+  video.addEventListener('loadedmetadata', () => {
+    if (!video.duration || isNaN(video.duration)) {
+      showError('Could not determine video duration. Try a different format (MP4/WebM recommended).');
+      return;
+    }
+    show('controls-card');
+    hide('progress-card');
+    hide('palette-card');
+    hide('playback-card');
+  }, { once: true });
+});
+
+$('analyse-btn').addEventListener('click', () => {
+  $('analyse-btn').disabled = true;
+  $('error-msg').classList.add('hidden');
+  hide('playback-card');
+  analyseAllFrames().catch(err => {
+    console.error(err);
+    showError('Analysis failed: ' + err.message);
+    $('analyse-btn').disabled = false;
+  });
+});
+
+$('play-btn').addEventListener('click', async () => {
+  if (!state.player) return;
+  await Tone.start(); // required: must be triggered by user gesture
+
+  // Rebuild player for clean replay from the beginning
+  const bpm = Math.max(40, parseInt($('bpm').value, 10));
+  state.player.part.dispose();
+  state.player.synth.dispose();
+  state.player = buildTonePlayer(state.sequence, bpm);
+
+  Tone.Transport.stop();
+  Tone.Transport.position = 0;
+  Tone.Transport.start();
+
+  $('play-btn').disabled = true;
+  $('stop-btn').disabled = false;
+
+  // Re-enable play when the sequence finishes
+  setTimeout(() => {
+    $('play-btn').disabled = false;
+    $('stop-btn').disabled = true;
+  }, (state.player.totalSec + 1) * 1000);
+});
+
+$('stop-btn').addEventListener('click', () => {
+  Tone.Transport.stop();
+  Tone.Transport.position = 0;
+  $('play-btn').disabled = false;
+  $('stop-btn').disabled = true;
+});
+</script>
+</body>
+</html>
