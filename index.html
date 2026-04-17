@@ -8,120 +8,162 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: system-ui, sans-serif;
-      background: #1a1a2e;
-      color: #eee;
+      background: #0d0d1a;
+      color: #ddd;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       padding: 40px 20px;
-      gap: 24px;
+      gap: 20px;
     }
-    h1 { font-size: 1.6rem; letter-spacing: 0.05em; }
+    h1 { font-size: 1.4rem; letter-spacing: 0.1em; color: #a78bfa; font-weight: 600; }
     .card {
-      background: #16213e;
+      background: #13132a;
+      border: 1px solid #2a2a4a;
       border-radius: 12px;
-      padding: 24px;
+      padding: 20px;
       width: 100%;
-      max-width: 560px;
+      max-width: 580px;
     }
     .card h2 {
-      font-size: 0.8rem;
+      font-size: 0.68rem;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: #888;
-      margin-bottom: 16px;
+      letter-spacing: 0.15em;
+      color: #55559a;
+      margin-bottom: 14px;
     }
 
     /* Upload */
     #upload-label {
       display: block;
-      border: 2px dashed #4a4a8a;
+      border: 2px dashed #2a2a5a;
       border-radius: 8px;
-      padding: 32px;
+      padding: 28px;
       text-align: center;
       cursor: pointer;
-      transition: border-color 0.2s;
+      color: #777;
+      font-size: 0.88rem;
+      transition: border-color 0.2s, color 0.2s;
     }
-    #upload-label:hover { border-color: #7b7bff; }
+    #upload-label:hover { border-color: #a78bfa; color: #ccc; }
     #video-input { display: none; }
-    #filename { margin-top: 8px; font-size: 0.85rem; color: #888; }
+    #filename { margin-top: 6px; font-size: 0.8rem; color: #a78bfa; min-height: 1em; }
 
-    /* Controls */
+    /* Method selector */
+    .method-row { display: flex; gap: 8px; margin-bottom: 16px; }
+    .method-btn {
+      flex: 1;
+      padding: 9px 6px;
+      background: #161630;
+      border: 1px solid #2a2a5a;
+      border-radius: 7px;
+      color: #666;
+      cursor: pointer;
+      font-size: 0.78rem;
+      text-align: center;
+      line-height: 1.3;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .method-btn .sub { font-size: 0.68rem; color: #444; display: block; margin-top: 2px; transition: color 0.15s; }
+    .method-btn:hover:not(.active) { border-color: #5555aa; color: #bbb; }
+    .method-btn:hover:not(.active) .sub { color: #666; }
+    .method-btn.active { background: #1e1050; border-color: #a78bfa; color: #c4b5fd; }
+    .method-btn.active .sub { color: #7c6cdc; }
+
+    /* Controls grid */
     .controls-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
+      gap: 12px;
+      margin-bottom: 14px;
     }
-    label.field { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: #aaa; }
+    label.field { display: flex; flex-direction: column; gap: 5px; font-size: 0.75rem; color: #7777aa; }
     input[type=number] {
-      background: #0f3460;
-      border: 1px solid #4a4a8a;
+      background: #0c0c22;
+      border: 1px solid #2a2a5a;
       border-radius: 6px;
-      color: #eee;
-      padding: 8px;
-      font-size: 1rem;
+      color: #ddd;
+      padding: 7px 8px;
+      font-size: 0.95rem;
       width: 100%;
     }
-    button {
-      background: #533483;
-      color: #fff;
+    input[type=number]:focus { outline: none; border-color: #a78bfa; }
+    input:disabled { opacity: 0.35; }
+
+    button.primary {
+      width: 100%;
+      background: #3b1a8a;
+      color: #e9d5ff;
       border: none;
       border-radius: 8px;
-      padding: 10px 24px;
+      padding: 10px;
       cursor: pointer;
-      font-size: 0.95rem;
+      font-size: 0.88rem;
+      letter-spacing: 0.04em;
       transition: background 0.2s;
     }
-    button:hover:not(:disabled) { background: #7b52b3; }
-    button:disabled { opacity: 0.4; cursor: default; }
-    #analyse-btn { width: 100%; }
+    button.primary:hover:not(:disabled) { background: #5b2fd4; }
+    button.primary:disabled { opacity: 0.4; cursor: default; }
 
     /* Progress */
     progress {
       display: block;
       width: 100%;
-      height: 8px;
-      border-radius: 4px;
-      overflow: hidden;
+      height: 5px;
+      border-radius: 3px;
       border: none;
-      background: #0f3460;
-      margin-bottom: 8px;
+      background: #1a1a38;
+      margin-bottom: 7px;
+      overflow: hidden;
     }
-    progress::-webkit-progress-bar { background: #0f3460; border-radius: 4px; }
-    progress::-webkit-progress-value { background: #7b7bff; border-radius: 4px; }
-    #progress-label { font-size: 0.85rem; color: #aaa; }
+    progress::-webkit-progress-bar { background: #1a1a38; border-radius: 3px; }
+    progress::-webkit-progress-value { background: #a78bfa; border-radius: 3px; }
+    #progress-label { font-size: 0.78rem; color: #55559a; }
 
     /* Swatches */
-    #frame-label { font-size: 0.85rem; color: #aaa; margin-bottom: 10px; }
+    #frame-label { font-size: 0.78rem; color: #55559a; margin-bottom: 10px; }
     #color-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
-    .swatch {
-      width: 52px;
-      height: 52px;
-      border-radius: 6px;
-      position: relative;
+    .swatch { width: 58px; border-radius: 7px; overflow: hidden; }
+    .swatch-color { height: 46px; }
+    .swatch-info {
+      background: rgba(0,0,0,0.55);
+      padding: 3px 4px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
     }
-    .swatch-label {
-      font-size: 9px;
-      color: rgba(255,255,255,0.8);
-      position: absolute;
-      bottom: 3px;
-      left: 0; right: 0;
-      text-align: center;
-      text-shadow: 0 0 4px rgba(0,0,0,0.9);
-    }
+    .swatch-pct  { font-size: 9px; color: #aaa; }
+    .swatch-reg  { font-size: 8px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+    .swatch-reg.bass { color: #60a5fa; }
+    .swatch-reg.lead { color: #fbbf24; }
+    .swatch-reg.pad  { color: #c084fc; }
 
     /* Playback */
-    .playback-btns { display: flex; gap: 12px; margin-bottom: 10px; }
-    .playback-btns button { flex: 1; }
-    #play-btn  { background: #1a6e3c; }
-    #play-btn:hover:not(:disabled)  { background: #27a85a; }
-    #stop-btn  { background: #6e1a1a; }
-    #stop-btn:hover:not(:disabled)  { background: #a82727; }
-    #playback-info { font-size: 0.8rem; color: #888; }
+    .play-row { display: flex; gap: 10px; margin-bottom: 10px; }
+    .play-row button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      transition: background 0.2s;
+    }
+    #play-btn { background: #0f4a28; color: #86efac; }
+    #play-btn:hover:not(:disabled) { background: #166534; }
+    #stop-btn { background: #4a0f0f; color: #fca5a5; }
+    #stop-btn:hover:not(:disabled) { background: #7f1d1d; }
+    .play-row button:disabled { opacity: 0.35; cursor: default; }
+    #seq-info { font-size: 0.78rem; color: #55559a; line-height: 1.7; }
+    .vs { display: inline-block; margin-right: 14px; font-weight: 600; }
+    .vs.bass { color: #60a5fa; }
+    .vs.lead { color: #fbbf24; }
+    .vs.pad  { color: #c084fc; }
 
-    #error-msg { color: #ff6b6b; font-size: 0.85rem; margin-top: 10px; }
+    #error-msg { color: #f87171; font-size: 0.8rem; margin-top: 8px; }
     .hidden { display: none !important; }
   </style>
 </head>
@@ -129,141 +171,261 @@
 
 <h1>Video to Sound</h1>
 
-<!-- Upload -->
 <div class="card">
-  <h2>Video</h2>
+  <h2>Source</h2>
   <label id="upload-label" for="video-input">
-    Click to upload a video file
+    Drop or click to upload a video
     <div id="filename"></div>
   </label>
   <input type="file" id="video-input" accept="video/*">
   <div id="error-msg" class="hidden"></div>
 </div>
 
-<!-- Hidden video used for frame seeking -->
 <video id="video-el" style="display:none" preload="auto"></video>
 
-<!-- Controls -->
 <div class="card hidden" id="controls-card">
-  <h2>Settings</h2>
+  <h2>Colour Extraction Method</h2>
+  <div class="method-row">
+    <div class="method-btn active" data-method="kmeans">
+      K-Means
+      <span class="sub">Raw clusters</span>
+    </div>
+    <div class="method-btn" data-method="hsl">
+      HSL Filter
+      <span class="sub">Drops greys</span>
+    </div>
+    <div class="method-btn" data-method="vibrant">
+      Vibrant
+      <span class="sub">Semantic labels</span>
+    </div>
+  </div>
+
+  <h2>Parameters</h2>
   <div class="controls-grid">
     <label class="field">BPM
       <input type="number" id="bpm" value="240" min="40" max="480">
     </label>
-    <label class="field">Notes / Frame
+    <label class="field" id="notes-label">Clusters / Frame
       <input type="number" id="num-notes" value="4" min="1" max="8">
     </label>
     <label class="field">Frame Interval (s)
       <input type="number" id="frame-interval" value="1" min="0.1" step="0.1">
     </label>
   </div>
-  <button id="analyse-btn">Analyse Video</button>
+  <button class="primary" id="analyse-btn">Analyse Video</button>
 </div>
 
-<!-- Progress -->
 <div class="card hidden" id="progress-card">
   <h2>Analysing</h2>
   <progress id="progress-bar" value="0" max="100"></progress>
   <span id="progress-label">0 / 0 frames</span>
 </div>
 
-<!-- Live colour palette -->
 <div class="card hidden" id="palette-card">
   <h2>Frame Colours</h2>
   <div id="frame-label"></div>
   <div id="color-swatches"></div>
 </div>
 
-<!-- Playback -->
 <div class="card hidden" id="playback-card">
   <h2>Playback</h2>
-  <div class="playback-btns">
+  <div class="play-row">
     <button id="play-btn">Play</button>
     <button id="stop-btn" disabled>Stop</button>
   </div>
-  <div id="playback-info"></div>
+  <div id="seq-info"></div>
 </div>
 
 <script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
+<script src="https://unpkg.com/node-vibrant@3.2.1/dist/vibrant.min.js"></script>
 <script>
 // ─── State ────────────────────────────────────────────────────────────────────
 const state = {
-  frameData: [],   // [{colors: [{r,g,b,pct}, ...]}]
-  sequence:  [],   // [{midiNote, beats}]
-  player:    null, // {part, synth, totalSec}
+  frameData: [],   // [{colors: [{rgb:[r,g,b], weight, label}]}]
+  sequence:  null, // {events:[{time,midiNote,durationSec,register}], totalSec}
+  synths:    null, // {bass,lead,pad,dispose()}
+  part:      null, // Tone.Part
+  method:    'kmeans',
 };
 
-// ─── K-Means ──────────────────────────────────────────────────────────────────
-function sqDist(a, b) {
-  return (a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2;
+// ─── Colour utilities ─────────────────────────────────────────────────────────
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h;
+  if      (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+  else if (max === g) h = ((b - r) / d + 2) / 6;
+  else                h = ((r - g) / d + 4) / 6;
+  return [h, s, l];
 }
 
-// K-Means++ initialisation
-function kMeansInit(pixels, k) {
-  const centroids = [[...pixels[Math.floor(Math.random() * pixels.length)]]];
-  while (centroids.length < k) {
-    const dists = pixels.map(p => Math.min(...centroids.map(c => sqDist(p, c))));
-    const total = dists.reduce((s, d) => s + d, 0);
-    let r = Math.random() * total;
-    let i = 0;
-    while (r > 0 && i < dists.length - 1) { r -= dists[i++]; }
-    centroids.push([...pixels[i]]);
+// ─── K-Means (K-Means++ init) ─────────────────────────────────────────────────
+function sqDist(a, b) { return (a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2; }
+
+function kMeansInit(px, k) {
+  const c = [[...px[Math.floor(Math.random() * px.length)]]];
+  while (c.length < k) {
+    const d = px.map(p => Math.min(...c.map(x => sqDist(p, x))));
+    const tot = d.reduce((s, x) => s + x, 0);
+    let r = Math.random() * tot, i = 0;
+    while (r > 0 && i < d.length - 1) r -= d[i++];
+    c.push([...px[i]]);
   }
-  return centroids;
+  return c;
 }
 
-function kMeans(pixels, k, maxIter = 20) {
-  k = Math.min(k, pixels.length);
-  if (k === 0) return [];
-  let centroids = kMeansInit(pixels, k);
-  const labels = new Int32Array(pixels.length);
-
-  for (let iter = 0; iter < maxIter; iter++) {
-    // Assign each pixel to nearest centroid
-    for (let i = 0; i < pixels.length; i++) {
-      let best = 0, bestD = Infinity;
-      for (let c = 0; c < k; c++) {
-        const d = sqDist(pixels[i], centroids[c]);
-        if (d < bestD) { bestD = d; best = c; }
-      }
+function kMeansCluster(px, k) {
+  k = Math.min(k, px.length);
+  if (!k) return [];
+  let cens = kMeansInit(px, k);
+  const labels = new Int32Array(px.length);
+  for (let it = 0; it < 20; it++) {
+    for (let i = 0; i < px.length; i++) {
+      let best = 0, bd = Infinity;
+      for (let c = 0; c < k; c++) { const d = sqDist(px[i], cens[c]); if (d < bd) { bd = d; best = c; } }
       labels[i] = best;
     }
-    // Recompute centroids
     let moved = false;
     for (let c = 0; c < k; c++) {
-      let sr = 0, sg = 0, sb = 0, count = 0;
-      for (let i = 0; i < pixels.length; i++) {
-        if (labels[i] === c) { sr += pixels[i][0]; sg += pixels[i][1]; sb += pixels[i][2]; count++; }
-      }
-      if (count > 0) {
-        const nr = sr/count, ng = sg/count, nb = sb/count;
-        if (sqDist(centroids[c], [nr, ng, nb]) >= 1.0) moved = true;
-        centroids[c] = [nr, ng, nb];
+      let sr = 0, sg = 0, sb = 0, n = 0;
+      for (let i = 0; i < px.length; i++) if (labels[i] === c) { sr += px[i][0]; sg += px[i][1]; sb += px[i][2]; n++; }
+      if (n) {
+        const nc = [sr/n, sg/n, sb/n];
+        if (sqDist(cens[c], nc) >= 1) moved = true;
+        cens[c] = nc;
       }
     }
     if (!moved) break;
   }
-
   const counts = new Int32Array(k);
-  for (let i = 0; i < pixels.length; i++) counts[labels[i]]++;
-  return centroids.map((cen, c) => ({
-    r: Math.round(cen[0]),
-    g: Math.round(cen[1]),
-    b: Math.round(cen[2]),
-    pct: counts[c] / pixels.length,
+  for (let i = 0; i < px.length; i++) counts[labels[i]]++;
+  return cens.map((c, i) => ({
+    rgb: [Math.round(c[0]), Math.round(c[1]), Math.round(c[2])],
+    weight: counts[i] / px.length,
+    label: null,
   }));
 }
 
-// ─── Frame extraction ─────────────────────────────────────────────────────────
+// ─── Three extraction paths — all return [{rgb:[r,g,b], weight, label}] ───────
+
+function extractKMeans(pixels, k) {
+  return kMeansCluster(pixels, k);
+}
+
+// Discard achromatic and near-black/white pixels before clustering so that grey
+// skies and tarmac don't swamp the output.
+function extractHSLFiltered(pixels, k) {
+  const filtered = pixels.filter(([r, g, b]) => {
+    const [, s, l] = rgbToHsl(r, g, b);
+    return s >= 0.18 && l >= 0.12 && l <= 0.88;
+  });
+  return kMeansCluster(filtered.length >= k ? filtered : pixels, k);
+}
+
+// Vibrant returns semantically-labelled swatches; fall back to K-Means if it
+// produces nothing useful (e.g. very flat / greyscale frame).
+async function extractVibrant(canvas, fallbackPixels, k) {
+  const palette = await Vibrant.from(canvas).getPalette();
+  const entries = Object.entries(palette).filter(([, sw]) => sw !== null);
+  if (!entries.length) return extractKMeans(fallbackPixels, k);
+  const totalPop = entries.reduce((s, [, sw]) => s + sw.population, 0);
+  return entries.map(([label, sw]) => ({
+    rgb: [Math.round(sw.rgb[0]), Math.round(sw.rgb[1]), Math.round(sw.rgb[2])],
+    weight: totalPop > 0 ? sw.population / totalPop : 1 / entries.length,
+    label,
+  }));
+}
+
+// ─── Register routing ─────────────────────────────────────────────────────────
+// Vibrant's semantic labels are used directly; the lightness heuristic handles
+// the K-Means and HSL paths where no label is available.
+function getRegister({ rgb, label }) {
+  if (label === 'DarkVibrant' || label === 'DarkMuted')   return 'bass';
+  if (label === 'LightVibrant' || label === 'LightMuted') return 'pad';
+  if (label === 'Vibrant')                                return 'lead';
+  if (label === 'Muted')                                  return 'pad';
+  const [, , l] = rgbToHsl(...rgb);
+  if (l < 0.30) return 'bass';
+  if (l > 0.65) return 'pad';
+  return 'lead';
+}
+
+// ─── Note mapping — method-agnostic ──────────────────────────────────────────
+// Preserves Python formula: int((r+g+b)/765*96+24), int(round(8*weight,0))
+function colorToNote(r, g, b) { return Math.trunc((r + g + b) / 765 * 96 + 24); }
+function pctToDuration(w)     { return Math.round(8 * w); }
+function midiToHz(n)          { return 440 * Math.pow(2, (n - 69) / 12); }
+
+// All notes from a frame start simultaneously (polyphonic chord per frame).
+// Time advances by the longest note in the frame.
+function buildSequence(frameData, bpm) {
+  const spb = 60 / bpm;
+  const events = [];
+  let t = 0;
+  for (const { colors } of frameData) {
+    const notes = colors
+      .map(sw => ({
+        register: getRegister(sw),
+        midiNote: colorToNote(...sw.rgb),
+        beats: pctToDuration(sw.weight),
+      }))
+      .filter(n => n.beats > 0);
+    for (const n of notes) {
+      events.push({ time: t, midiNote: n.midiNote, durationSec: n.beats * spb, register: n.register });
+    }
+    t += (notes.length ? Math.max(...notes.map(n => n.beats)) : 1) * spb;
+  }
+  return { events, totalSec: t };
+}
+
+// ─── Polyphonic analogue synth voices ─────────────────────────────────────────
+async function buildSynths() {
+  const limiter = new Tone.Limiter(-3).toDestination();
+  const reverb  = new Tone.Reverb({ decay: 4, preDelay: 0.02, wet: 0.40 }).connect(limiter);
+  await reverb.generate();
+  const delay      = new Tone.FeedbackDelay({ delayTime: '8n', feedback: 0.28, wet: 0.22 }).connect(reverb);
+  const bassFilter = new Tone.Filter({ frequency: 360, type: 'lowpass', rolloff: -24 }).connect(reverb);
+
+  // Bass: fat sawtooth through a low-pass filter for warmth
+  const bass = new Tone.PolySynth(Tone.Synth, {
+    oscillator: { type: 'fatsawtooth', count: 2, spread: 12 },
+    envelope:   { attack: 0.07, decay: 0.35, sustain: 0.88, release: 2.0 },
+  }).connect(bassFilter);
+  bass.volume.value = -4;
+
+  // Lead: square wave with feedback delay for edge
+  const lead = new Tone.PolySynth(Tone.Synth, {
+    oscillator: { type: 'square' },
+    envelope:   { attack: 0.02, decay: 0.12, sustain: 0.55, release: 0.9 },
+  }).connect(delay);
+  lead.volume.value = -9;
+
+  // Pad: heavily detuned sawtooth stack with long attack and reverb
+  const pad = new Tone.PolySynth(Tone.Synth, {
+    oscillator: { type: 'fatsawtooth', count: 3, spread: 44 },
+    envelope:   { attack: 0.5, decay: 0.25, sustain: 0.72, release: 3.5 },
+  }).connect(reverb);
+  pad.volume.value = -11;
+
+  return {
+    bass, lead, pad,
+    dispose() {
+      [bass, lead, pad, bassFilter, delay, reverb, limiter].forEach(n => n.dispose());
+    },
+  };
+}
+
+// ─── Video frame extraction ───────────────────────────────────────────────────
 const offCanvas = document.createElement('canvas');
 const offCtx    = offCanvas.getContext('2d');
 
 function seekToTime(video, t) {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      video.onseeked = null;
-      reject(new Error('Seek timeout at ' + t.toFixed(2) + 's'));
-    }, 6000);
+    const timer = setTimeout(() => { video.onseeked = null; reject(new Error('Seek timeout at ' + t.toFixed(2) + 's')); }, 6000);
     video.onseeked = () => { clearTimeout(timer); video.onseeked = null; resolve(); };
     video.currentTime = t;
   });
@@ -276,84 +438,8 @@ function extractPixels(video) {
   offCtx.drawImage(video, 0, 0, w, h);
   const raw = offCtx.getImageData(0, 0, w, h).data;
   const px = new Array(w * h);
-  for (let i = 0, j = 0; i < raw.length; i += 4, j++) {
-    px[j] = [raw[i], raw[i+1], raw[i+2]];
-  }
+  for (let i = 0, j = 0; i < raw.length; i += 4, j++) px[j] = [raw[i], raw[i+1], raw[i+2]];
   return px;
-}
-
-// ─── Note conversion (matches Python midify.py / utils.py exactly) ────────────
-// n = int((r+g+b) / 765 * 96 + 24)  →  MIDI range 24–120
-function colorToNote(r, g, b) {
-  return Math.trunc((r + g + b) / 765 * 96 + 24);
-}
-// d = int(round(8 * pct, 0))
-function pctToDuration(pct) {
-  return Math.round(8 * pct);
-}
-function midiToHz(n) {
-  return 440 * Math.pow(2, (n - 69) / 12);
-}
-
-function buildSequence(frameData) {
-  const seq = [];
-  for (const { colors } of frameData) {
-    for (const { r, g, b, pct } of colors) {
-      seq.push({ midiNote: colorToNote(r, g, b), beats: pctToDuration(pct) });
-    }
-  }
-  return seq;
-}
-
-// ─── Tone.js player ───────────────────────────────────────────────────────────
-function buildTonePlayer(sequence, bpm) {
-  const spb = 60 / bpm; // seconds per beat
-  const synth = new Tone.Synth({
-    oscillator: { type: 'triangle' },
-    envelope: { attack: 0.02, decay: 0.1, sustain: 0.5, release: 0.5 },
-  }).toDestination();
-
-  let t = 0;
-  const events = [];
-  for (const { midiNote, beats } of sequence) {
-    if (beats === 0) {
-      t += spb; // rest — mirrors Python's time = time+1 for zero-duration notes
-    } else {
-      events.push([t, { hz: midiToHz(midiNote), dur: beats * spb }]);
-      t += beats * spb;
-    }
-  }
-
-  const part = new Tone.Part((time, val) => {
-    synth.triggerAttackRelease(val.hz, val.dur, time);
-  }, events);
-  part.start(0);
-
-  return { part, synth, totalSec: t };
-}
-
-// ─── UI helpers ───────────────────────────────────────────────────────────────
-const $ = id => document.getElementById(id);
-const show = id => $(id).classList.remove('hidden');
-const hide = id => $(id).classList.add('hidden');
-
-function showError(msg) {
-  $('error-msg').textContent = msg;
-  $('error-msg').classList.remove('hidden');
-}
-
-function renderSwatches(colors) {
-  $('color-swatches').innerHTML = '';
-  for (const { r, g, b, pct } of colors) {
-    const div = document.createElement('div');
-    div.className = 'swatch';
-    div.style.background = `rgb(${r},${g},${b})`;
-    const lbl = document.createElement('div');
-    lbl.className = 'swatch-label';
-    lbl.textContent = (pct * 100).toFixed(0) + '%';
-    div.appendChild(lbl);
-    $('color-swatches').appendChild(div);
-  }
 }
 
 // ─── Analysis ─────────────────────────────────────────────────────────────────
@@ -370,12 +456,9 @@ async function analyseAllFrames() {
     return;
   }
 
-  // Build frame timestamps
   const timestamps = [];
-  for (let t = 0; t < dur; t += interval) {
-    timestamps.push(Math.min(t, dur - 0.1));
-  }
-  if (timestamps.length === 0) timestamps.push(0);
+  for (let t = 0; t < dur; t += interval) timestamps.push(Math.min(t, dur - 0.1));
+  if (!timestamps.length) timestamps.push(0);
 
   state.frameData = [];
   show('progress-card');
@@ -384,64 +467,126 @@ async function analyseAllFrames() {
   $('progress-label').textContent = '0 / ' + timestamps.length + ' frames';
 
   for (let i = 0; i < timestamps.length; i++) {
-    try {
-      await seekToTime(video, timestamps[i]);
-    } catch (e) {
-      console.warn(e.message);
-      continue;
-    }
+    try { await seekToTime(video, timestamps[i]); }
+    catch (e) { console.warn(e.message); continue; }
+
     const pixels = extractPixels(video);
-    const colors = kMeans(pixels, k);
+    let colors;
+    if (state.method === 'vibrant') {
+      try { colors = await extractVibrant(offCanvas, pixels, k); }
+      catch (e) { console.warn('Vibrant error, using K-Means fallback:', e); colors = extractKMeans(pixels, k); }
+    } else if (state.method === 'hsl') {
+      colors = extractHSLFiltered(pixels, k);
+    } else {
+      colors = extractKMeans(pixels, k);
+    }
+
     state.frameData.push({ colors });
-
-    $('frame-label').textContent =
-      'Frame ' + (i + 1) + ' of ' + timestamps.length +
-      '  (t = ' + timestamps[i].toFixed(1) + 's)';
+    $('frame-label').textContent = 'Frame ' + (i+1) + ' of ' + timestamps.length + '  (t = ' + timestamps[i].toFixed(1) + 's)';
     renderSwatches(colors);
-    $('progress-bar').value = ((i + 1) / timestamps.length * 100);
-    $('progress-label').textContent = (i + 1) + ' / ' + timestamps.length + ' frames';
-
-    await new Promise(r => setTimeout(r, 0)); // yield to keep UI responsive
+    $('progress-bar').value = (i+1) / timestamps.length * 100;
+    $('progress-label').textContent = (i+1) + ' / ' + timestamps.length + ' frames';
+    await new Promise(r => setTimeout(r, 0));
   }
 
-  if (state.frameData.length === 0) {
-    showError('No frames could be extracted from this video.');
+  if (!state.frameData.length) {
+    showError('No frames could be extracted.');
     $('analyse-btn').disabled = false;
     return;
   }
 
-  state.sequence = buildSequence(state.frameData);
+  state.sequence = buildSequence(state.frameData, bpm);
 
-  // Dispose any previous player
-  if (state.player) {
-    state.player.part.dispose();
-    state.player.synth.dispose();
-    state.player = null;
-  }
-  state.player = buildTonePlayer(state.sequence, bpm);
-
-  const noteCount = state.sequence.filter(n => n.beats > 0).length;
-  $('playback-info').textContent =
-    noteCount + ' audible notes across ' + state.frameData.length + ' frames' +
-    ' · ' + Math.round(state.player.totalSec) + 's of music';
+  const tally = { bass: 0, lead: 0, pad: 0 };
+  for (const e of state.sequence.events) tally[e.register]++;
+  $('seq-info').innerHTML =
+    `<span class="vs bass">bass ${tally.bass}</span>` +
+    `<span class="vs lead">lead ${tally.lead}</span>` +
+    `<span class="vs pad">pad  ${tally.pad}</span>` +
+    `${state.frameData.length} frames · ${Math.round(state.sequence.totalSec)}s`;
 
   show('playback-card');
   $('analyse-btn').disabled = false;
 }
 
-// ─── Event listeners ──────────────────────────────────────────────────────────
+// ─── Playback ─────────────────────────────────────────────────────────────────
+async function startPlayback() {
+  await Tone.start();
+
+  if (state.part)   { state.part.dispose();    state.part  = null; }
+  if (state.synths) { state.synths.dispose();  state.synths = null; }
+
+  state.synths = await buildSynths();
+  const { events, totalSec } = state.sequence;
+
+  const part = new Tone.Part((time, e) => {
+    state.synths[e.register].triggerAttackRelease(midiToHz(e.midiNote), e.durationSec, time);
+  }, events.map(e => [e.time, e]));
+  part.start(0);
+  state.part = part;
+
+  Tone.Transport.stop();
+  Tone.Transport.position = 0;
+  Tone.Transport.start();
+
+  $('play-btn').disabled = true;
+  $('stop-btn').disabled = false;
+  setTimeout(() => { $('play-btn').disabled = false; $('stop-btn').disabled = true; }, (totalSec + 1) * 1000);
+}
+
+function stopPlayback() {
+  Tone.Transport.stop();
+  Tone.Transport.position = 0;
+  $('play-btn').disabled = false;
+  $('stop-btn').disabled = true;
+}
+
+// ─── UI helpers ───────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const show = id => $(id).classList.remove('hidden');
+const hide = id => $(id).classList.add('hidden');
+function showError(msg) { $('error-msg').textContent = msg; $('error-msg').classList.remove('hidden'); }
+
+function renderSwatches(colors) {
+  $('color-swatches').innerHTML = '';
+  for (const sw of colors) {
+    const [r, g, b] = sw.rgb;
+    const reg = getRegister(sw);
+    const el = document.createElement('div');
+    el.className = 'swatch';
+    el.innerHTML =
+      `<div class="swatch-color" style="background:rgb(${r},${g},${b})"></div>` +
+      `<div class="swatch-info">` +
+        `<div class="swatch-pct">${(sw.weight * 100).toFixed(0)}%</div>` +
+        `<div class="swatch-reg ${reg}">${reg}</div>` +
+      `</div>`;
+    $('color-swatches').appendChild(el);
+  }
+}
+
+// ─── Method selector ──────────────────────────────────────────────────────────
+document.querySelectorAll('.method-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.method = btn.dataset.method;
+    $('num-notes').disabled = state.method === 'vibrant';
+    $('notes-label').querySelector('label, span, div') || ($('notes-label').style.opacity = state.method === 'vibrant' ? '0.4' : '1');
+  });
+});
+
+// ─── File upload ──────────────────────────────────────────────────────────────
 $('video-input').addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
   $('error-msg').classList.add('hidden');
   $('filename').textContent = file.name;
-
   const video = $('video-el');
   video.src = URL.createObjectURL(file);
   video.load();
   video.addEventListener('loadedmetadata', () => {
     if (!video.duration || isNaN(video.duration)) {
-      showError('Could not determine video duration. Try a different format (MP4/WebM recommended).');
+      showError('Could not read duration. Try MP4 or WebM.');
       return;
     }
     show('controls-card');
@@ -462,36 +607,8 @@ $('analyse-btn').addEventListener('click', () => {
   });
 });
 
-$('play-btn').addEventListener('click', async () => {
-  if (!state.player) return;
-  await Tone.start(); // required: must be triggered by user gesture
-
-  // Rebuild player for clean replay from the beginning
-  const bpm = Math.max(40, parseInt($('bpm').value, 10));
-  state.player.part.dispose();
-  state.player.synth.dispose();
-  state.player = buildTonePlayer(state.sequence, bpm);
-
-  Tone.Transport.stop();
-  Tone.Transport.position = 0;
-  Tone.Transport.start();
-
-  $('play-btn').disabled = true;
-  $('stop-btn').disabled = false;
-
-  // Re-enable play when the sequence finishes
-  setTimeout(() => {
-    $('play-btn').disabled = false;
-    $('stop-btn').disabled = true;
-  }, (state.player.totalSec + 1) * 1000);
-});
-
-$('stop-btn').addEventListener('click', () => {
-  Tone.Transport.stop();
-  Tone.Transport.position = 0;
-  $('play-btn').disabled = false;
-  $('stop-btn').disabled = true;
-});
+$('play-btn').addEventListener('click', () => startPlayback().catch(e => showError(e.message)));
+$('stop-btn').addEventListener('click', stopPlayback);
 </script>
 </body>
 </html>
