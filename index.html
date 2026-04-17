@@ -92,6 +92,39 @@
     input[type=number]:focus { outline: none; border-color: #a78bfa; }
     input:disabled { opacity: 0.35; }
 
+    /* Tuning */
+    .tuning-row { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-bottom: 12px; }
+    select {
+      background: #0c0c22;
+      border: 1px solid #2a2a5a;
+      border-radius: 6px;
+      color: #ddd;
+      padding: 7px 8px;
+      font-size: 0.88rem;
+      width: 100%;
+      cursor: pointer;
+    }
+    select:focus { outline: none; border-color: #a78bfa; }
+    select:disabled { opacity: 0.35; cursor: default; }
+    #degree-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .deg-btn {
+      padding: 5px 10px;
+      background: #161630;
+      border: 1px solid #2a2a5a;
+      border-radius: 5px;
+      color: #555;
+      cursor: pointer;
+      font-size: 0.75rem;
+      text-align: center;
+      line-height: 1.3;
+      user-select: none;
+      transition: all 0.12s;
+    }
+    .deg-btn .deg-note { font-size: 0.65rem; color: #444; display: block; transition: color 0.12s; }
+    .deg-btn.active { background: #1a1050; border-color: #a78bfa; color: #c4b5fd; }
+    .deg-btn.active .deg-note { color: #7c6cdc; }
+    .deg-btn:hover:not(.active) { border-color: #5555aa; color: #bbb; }
+
     button.primary {
       width: 100%;
       background: #3b1a8a;
@@ -200,6 +233,43 @@
     </div>
   </div>
 
+  <h2 style="margin-top:16px">Tuning</h2>
+  <div class="tuning-row">
+    <label class="field">Key
+      <select id="root-note">
+        <option value="-1">Chromatic</option>
+        <option value="0">C</option>
+        <option value="1">C#</option>
+        <option value="2">D</option>
+        <option value="3">D#</option>
+        <option value="4">E</option>
+        <option value="5">F</option>
+        <option value="6">F#</option>
+        <option value="7">G</option>
+        <option value="8">G#</option>
+        <option value="9">A</option>
+        <option value="10">A#</option>
+        <option value="11">B</option>
+      </select>
+    </label>
+    <label class="field">Scale
+      <select id="scale-type" disabled>
+        <option value="major">Major</option>
+        <option value="minor">Minor (Natural)</option>
+        <option value="harmonicMin">Minor (Harmonic)</option>
+        <option value="dorian">Dorian</option>
+        <option value="phrygian">Phrygian</option>
+        <option value="lydian">Lydian</option>
+        <option value="mixolydian">Mixolydian</option>
+        <option value="pentatonicMaj">Pentatonic Major</option>
+        <option value="pentatonicMin">Pentatonic Minor</option>
+        <option value="wholeTone">Whole Tone</option>
+        <option value="blues">Blues</option>
+      </select>
+    </label>
+  </div>
+  <div id="degree-row" class="hidden"></div>
+
   <h2>Parameters</h2>
   <div class="controls-grid">
     <label class="field">BPM
@@ -241,12 +311,32 @@
 <script>
 // ─── State ────────────────────────────────────────────────────────────────────
 const state = {
-  frameData: [],   // [{colors: [{rgb:[r,g,b], weight, label}]}]
-  sequence:  null, // {events:[{time,midiNote,durationSec,register}], totalSec}
-  synths:    null, // {bass,lead,pad,dispose()}
-  part:      null, // Tone.Part
-  method:    'kmeans',
+  frameData:     [],      // [{colors: [{rgb:[r,g,b], weight, label}]}]
+  sequence:      null,    // {events:[{time,midiNote,durationSec,register}], totalSec}
+  synths:        null,    // {bass,lead,pad,dispose()}
+  part:          null,    // Tone.Part
+  method:        'kmeans',
+  root:          -1,      // -1 = chromatic; 0–11 = C–B
+  scaleKey:      'major',
+  activeDegrees: new Set(),
 };
+
+// ─── Scales and note names ────────────────────────────────────────────────────
+const SCALES = {
+  major:         [0,2,4,5,7,9,11],
+  minor:         [0,2,3,5,7,8,10],
+  harmonicMin:   [0,2,3,5,7,8,11],
+  dorian:        [0,2,3,5,7,9,10],
+  phrygian:      [0,1,3,5,7,8,10],
+  lydian:        [0,2,4,6,7,9,11],
+  mixolydian:    [0,2,4,5,7,9,10],
+  pentatonicMaj: [0,2,4,7,9],
+  pentatonicMin: [0,3,5,7,10],
+  wholeTone:     [0,2,4,6,8,10],
+  blues:         [0,3,5,6,7,10],
+};
+const NOTE_NAMES   = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const DEGREE_NAMES = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
 
 // ─── Colour utilities ─────────────────────────────────────────────────────────
 function rgbToHsl(r, g, b) {
@@ -360,6 +450,30 @@ function colorToNote(r, g, b) { return Math.trunc((r + g + b) / 765 * 96 + 24); 
 function pctToDuration(w)     { return Math.round(8 * w); }
 function midiToHz(n)          { return 440 * Math.pow(2, (n - 69) / 12); }
 
+// ─── Scale quantization ───────────────────────────────────────────────────────
+// Snaps a MIDI note to the nearest active degree in the chosen scale/key.
+// Uses a wrap-around chromatic-circle distance so e.g. B→C is only 1 semitone.
+function quantizeToScale(midiNote, root, intervals) {
+  const n = ((midiNote - root) % 12 + 12) % 12;
+  let closest = intervals[0], minDist = 13;
+  for (const iv of intervals) {
+    const d = Math.min(Math.abs(iv - n), 12 - Math.abs(iv - n));
+    if (d < minDist) { minDist = d; closest = iv; }
+  }
+  let shift = closest - n;
+  if (shift > 6)  shift -= 12;
+  if (shift < -6) shift += 12;
+  return midiNote + shift;
+}
+
+function applyTuning(midiNote) {
+  if (state.root === -1) return midiNote;
+  const scale = SCALES[state.scaleKey];
+  const active = [...state.activeDegrees].filter(i => i < scale.length).map(i => scale[i]);
+  if (!active.length) return midiNote;
+  return quantizeToScale(midiNote, state.root, active);
+}
+
 // All notes from a frame start simultaneously (polyphonic chord per frame).
 // Time advances by the longest note in the frame.
 function buildSequence(frameData, bpm) {
@@ -370,7 +484,7 @@ function buildSequence(frameData, bpm) {
     const notes = colors
       .map(sw => ({
         register: getRegister(sw),
-        midiNote: colorToNote(...sw.rgb),
+        midiNote: applyTuning(colorToNote(...sw.rgb)),
         beats: pctToDuration(sw.weight),
       }))
       .filter(n => n.beats > 0);
@@ -563,6 +677,45 @@ function renderSwatches(colors) {
     $('color-swatches').appendChild(el);
   }
 }
+
+// ─── Tuning controls ──────────────────────────────────────────────────────────
+function renderDegreeToggles() {
+  if (state.root === -1) { hide('degree-row'); return; }
+  const scale = SCALES[state.scaleKey];
+  state.activeDegrees = new Set(scale.map((_, i) => i)); // all on by default
+  const row = $('degree-row');
+  row.innerHTML = '';
+  scale.forEach((semitones, i) => {
+    const noteName = NOTE_NAMES[(state.root + semitones) % 12];
+    const btn = document.createElement('div');
+    btn.className = 'deg-btn active';
+    btn.dataset.idx = i;
+    btn.innerHTML = DEGREE_NAMES[i] + '<span class="deg-note">' + noteName + '</span>';
+    btn.addEventListener('click', () => {
+      if (state.activeDegrees.has(i)) {
+        if (state.activeDegrees.size <= 1) return; // always keep at least one active
+        state.activeDegrees.delete(i);
+        btn.classList.remove('active');
+      } else {
+        state.activeDegrees.add(i);
+        btn.classList.add('active');
+      }
+    });
+    row.appendChild(btn);
+  });
+  show('degree-row');
+}
+
+$('root-note').addEventListener('change', e => {
+  state.root = parseInt(e.target.value, 10);
+  $('scale-type').disabled = state.root === -1;
+  renderDegreeToggles();
+});
+
+$('scale-type').addEventListener('change', e => {
+  state.scaleKey = e.target.value;
+  renderDegreeToggles();
+});
 
 // ─── Method selector ──────────────────────────────────────────────────────────
 document.querySelectorAll('.method-btn').forEach(btn => {
