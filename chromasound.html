@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chromasound — Video Sonification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;600;800&family=IBM+Plex+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.2/color-thief.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js"></script>
+<style>
+:root {
+  --bg: #0d0d0d;
+  --surface: #161616;
+  --surface2: #1e1e1e;
+  --border: #282828;
+  --accent: #ff9500;
+  --accent-dim: rgba(255,149,0,0.15);
+  --text: #d8d8d8;
+  --text-dim: #555;
+  --text-mid: #888;
+  --green: #00dd66;
+  --red: #dd2200;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'Barlow Condensed', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  background-image: radial-gradient(circle, #1e1e1e 1px, transparent 1px);
+  background-size: 20px 20px;
+  color: var(--text);
+  font-family: var(--sans);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(13,13,13,0.95);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+h1 {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.header-sub {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+}
+
+.header-spacer { flex: 1; }
+
+.status-pill {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-mid);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-body {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.left-panel {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+}
+
+video {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+  background: #000;
+  flex-shrink: 0;
+}
+
+.redux-area {
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.section-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+#reduxStrip {
+  display: block;
+  width: 100%;
+  height: 64px;
+  border: 1px solid var(--border);
+  background: #0a0a0a;
+}
+
+.swatches-area {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.swatches-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-height: 52px;
+  align-items: flex-start;
+}
+
+.swatch {
+  width: 52px;
+  height: 52px;
+  border-radius: 2px;
+  position: relative;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.swatch-note {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 2px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+  background: rgba(0,0,0,0.4);
+  line-height: 1.2;
+}
+
+.swatch-empty {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  align-self: center;
+}
+
+.log-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 16px;
+}
+
+.log-entry {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  line-height: 1.8;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.log-entry.active {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.log-note-chip {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-size: 9px;
+  margin: 0 2px;
+  font-weight: 700;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--surface);
+}
+
+.panel {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-title {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.file-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 1px dashed var(--border);
+  cursor: pointer;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--text-mid);
+  text-transform: uppercase;
+  transition: all 0.15s;
+}
+.file-label:hover { border-color: var(--accent); color: var(--accent); }
+input[type="file"] { display: none; }
+
+.method-toggle { display: flex; margin-bottom: 10px; }
+
+.method-btn {
+  flex: 1;
+  padding: 7px 4px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.12s;
+}
+.method-btn:not(:last-child) { border-right: none; }
+.method-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+.method-btn:not(.active):hover { color: var(--text); border-color: #444; }
+
+.ctrl-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-bottom: 3px;
+  margin-top: 8px;
+}
+.ctrl-label:first-child { margin-top: 0; }
+
+select {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  appearance: none;
+  cursor: pointer;
+}
+select:focus { outline: 1px solid var(--accent); }
+
+.range-row { display: flex; align-items: center; gap: 8px; }
+
+input[type=range] {
+  flex: 1;
+  accent-color: var(--accent);
+  cursor: pointer;
+  height: 16px;
+}
+
+.range-val {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--accent);
+  min-width: 28px;
+  text-align: right;
+}
+
+.method-hint {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 11px;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: none;
+  transition: all 0.12s;
+  margin-bottom: 8px;
+}
+.btn:last-child { margin-bottom: 0; }
+
+.btn-analyse { background: var(--accent); color: #000; }
+.btn-analyse:hover:not(:disabled) { background: #ffaa22; }
+.btn-analyse:disabled { background: var(--border); color: var(--text-dim); cursor: default; }
+
+.btn-play { background: var(--green); color: #000; font-size: 18px; }
+.btn-play:hover:not(:disabled) { background: #00ff77; }
+.btn-play.playing { background: var(--red); color: #fff; }
+.btn-play.playing:hover { background: #ff3311; }
+.btn-play:disabled { background: var(--border); color: var(--text-dim); cursor: default; }
+
+.progress-wrap { height: 3px; background: var(--border); margin: 8px 0; display: none; }
+.progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.08s linear; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>CHROMASOUND</h1>
+  <span class="header-sub">// video → colour → sound</span>
+  <div class="header-spacer"></div>
+  <div class="status-pill" id="statusPill">Load a video file to begin</div>
+</header>
+
+<div class="app-body">
+  <div class="left-panel">
+    <video id="video" controls></video>
+
+    <div class="redux-area">
+      <div class="section-label">Cinema Redux Strip</div>
+      <canvas id="reduxStrip"></canvas>
+    </div>
+
+    <div class="swatches-area">
+      <div class="section-label">Current Frame Palette</div>
+      <div class="swatches-row" id="swatchRow">
+        <span class="swatch-empty">— no frame analysed —</span>
+      </div>
+    </div>
+
+    <div class="log-area" id="noteLog"></div>
+  </div>
+
+  <div class="sidebar">
+    <div class="panel">
+      <div class="panel-title">Source</div>
+      <label class="file-label" for="fileInput">
+        <span>📂</span> Load Video
+      </label>
+      <input type="file" id="fileInput" accept="video/*">
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Colour Extraction</div>
+      <div class="method-toggle">
+        <button class="method-btn active" data-method="colorthief">ColorThief</button>
+        <button class="method-btn" data-method="vibrant">Vibrant</button>
+        <button class="method-btn" data-method="hsl">HSL</button>
+      </div>
+
+      <div id="opts-colorthief">
+        <span class="ctrl-label">Palette colours</span>
+        <div class="range-row">
+          <input type="range" id="paletteSize" min="2" max="8" value="4">
+          <span class="range-val" id="paletteSizeVal">4</span>
+        </div>
+      </div>
+
+      <div id="opts-vibrant" style="display:none">
+        <p class="method-hint">Returns up to 6 semantically-labelled swatches. Dark swatches route to bass register; light swatches to treble.</p>
+      </div>
+
+      <div id="opts-hsl" style="display:none">
+        <span class="ctrl-label">Hue histogram peaks</span>
+        <div class="range-row">
+          <input type="range" id="hslPeaks" min="2" max="8" value="4">
+          <span class="range-val" id="hslPeaksVal">4</span>
+        </div>
+        <p class="method-hint" style="margin-top:6px">Desaturated pixels filtered out. Hue maps directly to pitch before scale quantisation.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Musical Mapping</div>
+      <span class="ctrl-label">Key</span>
+      <select id="key">
+        <option>C</option><option>C#</option><option>D</option>
+        <option>D#</option><option>E</option><option>F</option>
+        <option>F#</option><option>G</option><option>G#</option>
+        <option>A</option><option>A#</option><option>B</option>
+      </select>
+      <span class="ctrl-label">Scale</span>
+      <select id="scale">
+        <option value="major">Major</option>
+        <option value="minor">Minor</option>
+        <option value="pentatonic major">Pentatonic Major</option>
+        <option value="pentatonic minor">Pentatonic Minor</option>
+        <option value="dorian">Dorian</option>
+        <option value="lydian">Lydian</option>
+        <option value="chromatic">Chromatic</option>
+      </select>
+      <span class="ctrl-label">Octave — low</span>
+      <div class="range-row">
+        <input type="range" id="octaveLow" min="1" max="5" value="3">
+        <span class="range-val" id="octaveLowVal">3</span>
+      </div>
+      <span class="ctrl-label">Octave — high</span>
+      <div class="range-row">
+        <input type="range" id="octaveHigh" min="2" max="7" value="5">
+        <span class="range-val" id="octaveHighVal">5</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Tempo</div>
+      <span class="ctrl-label">BPM</span>
+      <div class="range-row">
+        <input type="range" id="bpm" min="40" max="240" value="120">
+        <span class="range-val" id="bpmVal">120</span>
+      </div>
+      <span class="ctrl-label">Frames per beat</span>
+      <div class="range-row">
+        <input type="range" id="fpb" min="1" max="8" value="2">
+        <span class="range-val" id="fpbVal">2</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Actions</div>
+      <button class="btn btn-analyse" id="analyseBtn" disabled>Analyse Frames</button>
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <button class="btn btn-play" id="playBtn" disabled>▶ Play</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="workCanvas" width="160" height="120" style="display:none"></canvas>
+
+<script>
+// ═══════════════════════════════════════
+// SCALE DATA (inline — no external dependency)
+// ═══════════════════════════════════════
+
+const CHROMATIC_NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+const SCALE_INTERVALS = {
+  'major':            [0, 2, 4, 5, 7, 9, 11],
+  'minor':            [0, 2, 3, 5, 7, 8, 10],
+  'pentatonic major': [0, 2, 4, 7, 9],
+  'pentatonic minor': [0, 3, 5, 7, 10],
+  'dorian':           [0, 2, 3, 5, 7, 9, 10],
+  'lydian':           [0, 2, 4, 6, 7, 9, 11],
+  'chromatic':        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+};
+
+function getScaleNotes(key, scaleName) {
+  const rootIdx = CHROMATIC_NOTES.indexOf(key);
+  if (rootIdx === -1) return CHROMATIC_NOTES;
+  const intervals = SCALE_INTERVALS[scaleName] || SCALE_INTERVALS['major'];
+  return intervals.map(i => CHROMATIC_NOTES[(rootIdx + i) % 12]);
+}
+
+// ═══════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════
+
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0, l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+      case g: h = ((b - r) / d + 2) / 6; break;
+      case b: h = ((r - g) / d + 4) / 6; break;
+    }
+  }
+  return [h, s, l];
+}
+
+function rgbToHex(r, g, b) {
+  return '#' + [r, g, b].map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
+}
+
+function luminance(r, g, b) {
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
+
+// Uses Blob URL to avoid file:// origin restriction that breaks toDataURL → Image
+function canvasToImage(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (!blob) { reject(new Error('toBlob returned null')); return; }
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload  = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Blob image load failed')); };
+      img.src = url;
+    }, 'image/jpeg', 0.85);
+  });
+}
+
+function seekVideo(videoEl, time) {
+  return new Promise(resolve => {
+    const handler = () => { videoEl.removeEventListener('seeked', handler); resolve(); };
+    videoEl.addEventListener('seeked', handler);
+    videoEl.currentTime = time;
+  });
+}
+
+// ═══════════════════════════════════════
+// COLOUR EXTRACTION
+// All return: Array<{ rgb:[r,g,b], weight:number, register?:string }>
+// ═══════════════════════════════════════
+
+const colorThief = new ColorThief();
+
+async function extractColorThief(canvas, paletteSize) {
+  const img = await canvasToImage(canvas);
+  let palette;
+  try {
+    palette = colorThief.getPalette(img, paletteSize);
+  } catch (e) {
+    try { palette = [colorThief.getColor(img)]; } catch (e2) { return []; }
+  }
+  if (!palette || palette.length === 0) return [];
+  const total = palette.reduce((s, _, i) => s + 1 / (i + 1), 0);
+  return palette.map((rgb, i) => ({ rgb, weight: (1 / (i + 1)) / total }));
+}
+
+async function extractVibrant(canvas) {
+  const img = await canvasToImage(canvas);
+  let palette;
+  try {
+    palette = await Vibrant.from(img).getPalette();
+  } catch (e) {
+    console.warn('Vibrant failed:', e);
+    return [];
+  }
+
+  const swatchDefs = [
+    { key: 'Vibrant',      register: 'mid'  },
+    { key: 'LightVibrant', register: 'high' },
+    { key: 'DarkVibrant',  register: 'low'  },
+    { key: 'Muted',        register: 'mid'  },
+    { key: 'LightMuted',   register: 'high' },
+    { key: 'DarkMuted',    register: 'low'  },
+  ];
+
+  const results = [];
+  for (const def of swatchDefs) {
+    const swatch = palette[def.key];
+    if (!swatch) continue;
+    const rgb = swatch.rgb || swatch._rgb;
+    if (!rgb) continue;
+    results.push({
+      rgb: rgb.map(Math.round),
+      weight: swatch.population || 1,
+      register: def.register,
+    });
+  }
+
+  if (results.length === 0) return [];
+  const totalWeight = results.reduce((s, r) => s + r.weight, 0);
+  return results.map(r => ({ ...r, weight: r.weight / totalWeight }));
+}
+
+function extractHSL(canvas, numPeaks) {
+  const ctx = canvas.getContext('2d');
+  const { width, height } = canvas;
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const pixels = imageData.data;
+
+  const NUM_BINS = 36;
+  const hueBins    = new Float32Array(NUM_BINS);
+  const accumR     = new Float32Array(NUM_BINS);
+  const accumG     = new Float32Array(NUM_BINS);
+  const accumB     = new Float32Array(NUM_BINS);
+  const accumCount = new Uint32Array(NUM_BINS);
+
+  for (let i = 0; i < pixels.length; i += 16) {
+    const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
+    const [h, s, l] = rgbToHsl(r, g, b);
+    if (s > 0.18 && l > 0.12 && l < 0.88) {
+      const bin = Math.min(Math.floor(h * NUM_BINS), NUM_BINS - 1);
+      hueBins[bin]++;
+      accumR[bin] += r; accumG[bin] += g; accumB[bin] += b;
+      accumCount[bin]++;
+    }
+  }
+
+  const totalSaturated = hueBins.reduce((a, b) => a + b, 0);
+  if (totalSaturated === 0) return [];
+
+  return Array.from(hueBins, (count, i) => ({ count, i }))
+    .filter(x => x.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, numPeaks)
+    .map(({ count, i }) => {
+      const n = accumCount[i];
+      return {
+        rgb: [Math.round(accumR[i]/n), Math.round(accumG[i]/n), Math.round(accumB[i]/n)],
+        weight: count / totalSaturated,
+      };
+    });
+}
+
+// ═══════════════════════════════════════
+// NOTE MAPPING
+// ═══════════════════════════════════════
+
+function colourToNote(item, key, scaleName, octaveLow, octaveHigh) {
+  const { rgb, register } = item;
+  const [h, s, l] = rgbToHsl(rgb[0], rgb[1], rgb[2]);
+
+  const notes = getScaleNotes(key, scaleName);
+  if (!notes || notes.length === 0) return null;
+
+  const degree   = Math.floor(h * notes.length) % notes.length;
+  const noteName = notes[degree];
+
+  let octave;
+  if (register === 'low')       octave = octaveLow;
+  else if (register === 'high') octave = octaveHigh;
+  else                          octave = Math.round(octaveLow + l * (octaveHigh - octaveLow));
+  octave = Math.max(1, Math.min(7, octave));
+
+  const velocity = Math.max(0.2, Math.min(1.0, 0.3 + s * 0.7));
+
+  return { note: noteName + octave, velocity, hex: rgbToHex(rgb[0], rgb[1], rgb[2]), lightness: l };
+}
+
+// ═══════════════════════════════════════
+// SYNTH SETUP
+// ═══════════════════════════════════════
+
+const reverb = new Tone.Reverb({ decay: 2.0, wet: 0.35 }).toDestination();
+const delay  = new Tone.FeedbackDelay('8n', 0.18).connect(reverb);
+const filter = new Tone.Filter(4000, 'lowpass').connect(delay);
+
+const melodySynth = new Tone.PolySynth(Tone.Synth, {
+  oscillator: { type: 'triangle' },
+  envelope: { attack: 0.04, decay: 0.12, sustain: 0.35, release: 1.0 },
+}).connect(filter);
+
+const bassSynth = new Tone.MonoSynth({
+  oscillator: { type: 'sine' },
+  envelope: { attack: 0.08, decay: 0.3, sustain: 0.5, release: 1.2 },
+  filterEnvelope: { attack: 0.08, decay: 0.4, sustain: 0.5, release: 1.0, baseFrequency: 200, octaves: 2 },
+}).connect(reverb);
+
+melodySynth.volume.value = -8;
+bassSynth.volume.value   = -12;
+
+// ═══════════════════════════════════════
+// DOM REFS & STATE
+// ═══════════════════════════════════════
+
+const videoEl     = document.getElementById('video');
+const workCanvas  = document.getElementById('workCanvas');
+const workCtx     = workCanvas.getContext('2d');
+const reduxCanvas = document.getElementById('reduxStrip');
+const reduxCtx    = reduxCanvas.getContext('2d');
+
+let analysedFrames = [];
+let currentMethod  = 'colorthief';
+let isPlaying      = false;
+let tonePart       = null;
+let reduxSnapshot  = null;
+let isCancelled    = false;
+
+// ═══════════════════════════════════════
+// ANALYSIS
+// ═══════════════════════════════════════
+
+async function analyseFrames() {
+  const duration = videoEl.duration;
+  if (!isFinite(duration) || duration <= 0) { setStatus('Video has no valid duration'); return; }
+
+  const paletteSize = parseInt(document.getElementById('paletteSize').value);
+  const hslPeaks    = parseInt(document.getElementById('hslPeaks').value);
+  const key         = document.getElementById('key').value;
+  const scale       = document.getElementById('scale').value;
+  const octaveLow   = parseInt(document.getElementById('octaveLow').value);
+  const octaveHigh  = parseInt(document.getElementById('octaveHigh').value);
+  const totalFrames = Math.max(1, Math.floor(duration));
+
+  analysedFrames = [];
+  isCancelled    = false;
+  reduxSnapshot  = null;
+
+  reduxCanvas.width  = Math.min(totalFrames * 3, 1200);
+  reduxCanvas.height = 64;
+  reduxCtx.clearRect(0, 0, reduxCanvas.width, reduxCanvas.height);
+
+  document.getElementById('progressWrap').style.display = 'block';
+  setAnalyseBtnState('cancel');
+
+  for (let i = 0; i < totalFrames; i++) {
+    if (isCancelled) { setStatus('Analysis cancelled'); break; }
+
+    await seekVideo(videoEl, i);
+    workCtx.drawImage(videoEl, 0, 0, workCanvas.width, workCanvas.height);
+
+    const colW = reduxCanvas.width / totalFrames;
+    reduxCtx.drawImage(workCanvas, 0, 0, workCanvas.width, workCanvas.height,
+      i * colW, 0, colW, reduxCanvas.height);
+
+    let colours = [];
+    try {
+      if (currentMethod === 'colorthief') {
+        colours = await extractColorThief(workCanvas, paletteSize);
+      } else if (currentMethod === 'vibrant') {
+        colours = await extractVibrant(workCanvas);
+      } else {
+        colours = extractHSL(workCanvas, hslPeaks);
+      }
+    } catch (err) {
+      console.warn(`Frame ${i} extraction error:`, err);
+    }
+
+    const noteEvents = colours
+      .map(c => {
+        const mapped = colourToNote(c, key, scale, octaveLow, octaveHigh);
+        if (!mapped) return null;
+        return { ...mapped, weight: c.weight, rgb: c.rgb };
+      })
+      .filter(Boolean);
+
+    analysedFrames.push({ colours, noteEvents });
+
+    document.getElementById('progressFill').style.width =
+      Math.round(((i + 1) / totalFrames) * 100) + '%';
+    setStatus(`Analysing ${i + 1} / ${totalFrames} frames…`);
+  }
+
+  reduxSnapshot = reduxCtx.getImageData(0, 0, reduxCanvas.width, reduxCanvas.height);
+  document.getElementById('progressWrap').style.display = 'none';
+  document.getElementById('progressFill').style.width = '0%';
+
+  const totalNotes = analysedFrames.reduce((s, f) => s + f.noteEvents.length, 0);
+  setStatus(`Done — ${analysedFrames.length} frames · ${totalNotes} notes · ready to play`);
+  setAnalyseBtnState('ready');
+  document.getElementById('playBtn').disabled = analysedFrames.length === 0;
+}
+
+// ═══════════════════════════════════════
+// PLAYBACK
+// ═══════════════════════════════════════
+
+function buildAndPlay() {
+  const bpm           = parseInt(document.getElementById('bpm').value);
+  const fpb           = parseInt(document.getElementById('fpb').value);
+  const beatDuration  = 60 / bpm;
+  const frameDuration = beatDuration * fpb;
+
+  Tone.getTransport().bpm.value = bpm;
+
+  const events = [];
+
+  analysedFrames.forEach((frame, frameIdx) => {
+    const frameTime = frameIdx * frameDuration;
+    const noteCount = frame.noteEvents.length;
+    if (noteCount === 0) return;
+
+    frame.noteEvents.forEach((ev, noteIdx) => {
+      events.push([
+        frameTime + (noteIdx / noteCount) * frameDuration,
+        {
+          note:      ev.note,
+          velocity:  ev.velocity,
+          duration:  (frameDuration / noteCount) * 0.88,
+          frameIdx,
+          rgb:       ev.rgb,
+          lightness: ev.lightness,
+          isFirst:   noteIdx === 0,
+        }
+      ]);
+    });
+  });
+
+  if (events.length === 0) return;
+
+  tonePart = new Tone.Part((time, val) => {
+    const { note, velocity, duration, frameIdx, lightness, isFirst } = val;
+    try {
+      if (lightness < 0.35 && isFirst) {
+        bassSynth.triggerAttackRelease(note, duration, time, velocity);
+      } else {
+        melodySynth.triggerAttackRelease(note, duration, time, velocity);
+      }
+    } catch (e) {}
+
+    const msUntil = (time - Tone.getContext().currentTime) * 1000;
+    setTimeout(() => {
+      if (!isPlaying) return;
+      updateSwatches(analysedFrames[frameIdx]);
+      highlightFrame(frameIdx, analysedFrames.length);
+      if (isFirst) appendLog(frameIdx, analysedFrames[frameIdx].noteEvents);
+    }, Math.max(0, msUntil));
+
+  }, events);
+
+  tonePart.start(0);
+  Tone.getTransport().scheduleOnce(() => stopPlayback(), analysedFrames.length * frameDuration + 0.5);
+  Tone.getTransport().start();
+
+  isPlaying = true;
+  const btn = document.getElementById('playBtn');
+  btn.textContent = '■ Stop';
+  btn.classList.add('playing');
+}
+
+function stopPlayback() {
+  if (tonePart) {
+    try { tonePart.stop(); tonePart.dispose(); } catch (e) {}
+    tonePart = null;
+  }
+  try { Tone.getTransport().stop(); Tone.getTransport().cancel(); } catch (e) {}
+  isPlaying = false;
+  const btn = document.getElementById('playBtn');
+  btn.textContent = '▶ Play';
+  btn.classList.remove('playing');
+}
+
+// ═══════════════════════════════════════
+// VISUALISATION
+// ═══════════════════════════════════════
+
+function highlightFrame(frameIdx, totalFrames) {
+  if (!reduxSnapshot) return;
+  reduxCtx.putImageData(reduxSnapshot, 0, 0);
+  const colW = reduxCanvas.width / totalFrames;
+  const x    = frameIdx * colW;
+  reduxCtx.fillStyle = 'rgba(255,149,0,0.45)';
+  reduxCtx.fillRect(x, 0, colW, reduxCanvas.height);
+  reduxCtx.fillStyle = '#ff9500';
+  reduxCtx.fillRect(x, 0, colW, 3);
+}
+
+function updateSwatches(frame) {
+  const row = document.getElementById('swatchRow');
+  row.innerHTML = '';
+  if (!frame.noteEvents.length) {
+    row.innerHTML = '<span class="swatch-empty">— no colours extracted —</span>';
+    return;
+  }
+  frame.noteEvents.forEach(ev => {
+    const d = document.createElement('div');
+    d.className = 'swatch';
+    d.style.backgroundColor = ev.hex;
+    const s = document.createElement('span');
+    s.className = 'swatch-note';
+    s.textContent = ev.note;
+    d.appendChild(s);
+    row.appendChild(d);
+  });
+}
+
+function appendLog(frameIdx, noteEvents) {
+  const log = document.getElementById('noteLog');
+  const prev = log.querySelector('.active');
+  if (prev) prev.classList.remove('active');
+
+  const entry = document.createElement('div');
+  entry.className = 'log-entry active';
+
+  const frameSpan = document.createElement('span');
+  frameSpan.style.cssText = 'color:var(--text-dim);margin-right:8px';
+  frameSpan.textContent = `[${String(frameIdx).padStart(4, '0')}]`;
+  entry.appendChild(frameSpan);
+
+  noteEvents.forEach(ev => {
+    const chip = document.createElement('span');
+    chip.className = 'log-note-chip';
+    chip.style.backgroundColor = ev.hex;
+    chip.style.color = luminance(...ev.rgb) > 0.45 ? '#000' : '#fff';
+    chip.textContent = ev.note;
+    entry.appendChild(chip);
+  });
+
+  log.insertBefore(entry, log.firstChild);
+  if (log.children.length > 80) log.removeChild(log.lastChild);
+}
+
+// ═══════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════
+
+function setStatus(msg) {
+  document.getElementById('statusPill').textContent = msg;
+}
+
+function setAnalyseBtnState(state) {
+  const btn = document.getElementById('analyseBtn');
+  btn.disabled = false;
+  if (state === 'cancel') {
+    btn.textContent = 'Cancel';
+    btn.onclick = () => { isCancelled = true; };
+  } else {
+    btn.textContent = 'Re-analyse';
+    btn.onclick = handleAnalyse;
+  }
+}
+
+// ═══════════════════════════════════════
+// EVENT WIRING
+// ═══════════════════════════════════════
+
+async function handleAnalyse() {
+  await Tone.start();
+  if (isPlaying) stopPlayback();
+  document.getElementById('analyseBtn').disabled = true;
+  try {
+    await analyseFrames();
+  } finally {
+    document.getElementById('analyseBtn').disabled = false;
+  }
+}
+
+document.getElementById('fileInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  videoEl.src = URL.createObjectURL(file);
+  videoEl.load();
+  videoEl.addEventListener('loadedmetadata', () => {
+    const dur = Math.round(videoEl.duration);
+    setStatus(`${file.name} — ${dur}s · ${Math.floor(videoEl.duration)} frames at 1fps`);
+    const btn = document.getElementById('analyseBtn');
+    btn.disabled = false;
+    btn.textContent = 'Analyse Frames';
+    btn.onclick = handleAnalyse;
+    document.getElementById('playBtn').disabled = true;
+    analysedFrames = [];
+    reduxSnapshot  = null;
+    reduxCtx.clearRect(0, 0, reduxCanvas.width, reduxCanvas.height);
+    document.getElementById('noteLog').innerHTML = '';
+    document.getElementById('swatchRow').innerHTML = '<span class="swatch-empty">— no frame analysed —</span>';
+  }, { once: true });
+});
+
+document.querySelectorAll('.method-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMethod = btn.dataset.method;
+    document.getElementById('opts-colorthief').style.display = currentMethod === 'colorthief' ? '' : 'none';
+    document.getElementById('opts-vibrant').style.display    = currentMethod === 'vibrant'    ? '' : 'none';
+    document.getElementById('opts-hsl').style.display        = currentMethod === 'hsl'        ? '' : 'none';
+  });
+});
+
+[
+  ['paletteSize', 'paletteSizeVal'],
+  ['hslPeaks',    'hslPeaksVal'],
+  ['bpm',         'bpmVal'],
+  ['fpb',         'fpbVal'],
+  ['octaveLow',   'octaveLowVal'],
+  ['octaveHigh',  'octaveHighVal'],
+].forEach(([id, valId]) => {
+  document.getElementById(id).addEventListener('input', function () {
+    document.getElementById(valId).textContent = this.value;
+  });
+});
+
+document.getElementById('analyseBtn').onclick = handleAnalyse;
+
+document.getElementById('playBtn').addEventListener('click', async () => {
+  await Tone.start();
+  if (isPlaying) { stopPlayback(); return; }
+  if (analysedFrames.length === 0) return;
+  buildAndPlay();
+});
+
+document.getElementById('octaveLow').addEventListener('input', function () {
+  const high = document.getElementById('octaveHigh');
+  if (parseInt(this.value) >= parseInt(high.value)) {
+    high.value = parseInt(this.value) + 1;
+    document.getElementById('octaveHighVal').textContent = high.value;
+  }
+});
+</script>
+</body>
+</html>
